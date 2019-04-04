@@ -1,5 +1,5 @@
 {
-    "name": "@carimus/node-typescript-package-template",
+    "name": "@carimus/node-uploads",
     "version": "0.0.0-development",
     "description": "",
     "main": "dist/index.js",
@@ -17,7 +17,7 @@
         "release-ci": "echo 'unsafe-perm = true' > ./.npmrc && yarn run semantic-release && rm -rf ./.npmrc",
         "commit": "git-cz"
     },
-    "repository": "https://bitbucket.org/Carimus/carimus-node-ts-package-template",
+    "repository": "https://github.com/Carimus/node-uploads",
     "author": "Carimus",
     "license": "MIT",
     "private": false,
