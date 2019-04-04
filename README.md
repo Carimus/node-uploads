@@ -1,5 +1,7 @@
 # Node Uploads
 
+A library for accepting uploads, storing them in abstract disks, and referencing them in your database.
+
 ## Getting Started
 
 Install the package in your project:

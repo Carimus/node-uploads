@@ -1,7 +1,7 @@
 {
     "name": "@carimus/node-uploads",
     "version": "0.0.0-development",
-    "description": "",
+    "description": "A library for accepting uploads, storing them in abstract disks, and referencing them in your database.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
