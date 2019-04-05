@@ -139,9 +139,9 @@
     to-fast-properties "^2.0.0"
 
 "@carimus/node-disks@^1.2.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.3.0.tgz#f3744201c69cb6d0b28ff9ee7fc1101f0cde88e1"
-  integrity sha512-hBIXpF1AbExoFMebMLolH6PP9LZs8812WrvU8EnbIJljwRG8zC5Ew/+nJuu5CF2N0iTxg3B6/zxzaVQ7YthzXw==
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.3.2.tgz#c7464970ccb8c29316fbbc42cbc19a8c16ff957b"
+  integrity sha512-fnfJjA9/JQQsT/Xy8nF3elMzoh6cfwDRUGJ864QLHQihsShlXvhQjr17lE/K5c+GgEhK3X+FTec1sgjcxUHztw==
   dependencies:
     aws-sdk "^2.431.0"
     ramda "0.25.0"
@@ -974,9 +974,9 @@ atob@^2.1.1:
   integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
 
 aws-sdk@^2.431.0:
-  version "2.436.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.436.0.tgz#8882b823818cdb593cdc5540e6261ed7d7357be3"
-  integrity sha512-ncUefjtddjums7B4j8JGChwArc48is5SKFKxmf3UEixLvRW509SaiC+Di2NfO5YpUnYHGTbpcgCF+DFtxJXChA==
+  version "2.437.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.437.0.tgz#94e41a2ff112aa020ddbe4950dd5f73187889b8b"
+  integrity sha512-sDZb5QBOO6FOMvuKDEdO16YQRk0WUhnQd38EaSt0yUCi4Gev8uypODyYONgODZcXe8Cr1GMwC8scUKr00S/I5w==
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
