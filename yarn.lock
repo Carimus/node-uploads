@@ -139,9 +139,9 @@
     to-fast-properties "^2.0.0"
 
 "@carimus/node-disks@^1.2.0":
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.3.2.tgz#c7464970ccb8c29316fbbc42cbc19a8c16ff957b"
-  integrity sha512-fnfJjA9/JQQsT/Xy8nF3elMzoh6cfwDRUGJ864QLHQihsShlXvhQjr17lE/K5c+GgEhK3X+FTec1sgjcxUHztw==
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.4.0.tgz#25d131919171fe2656b7e3463eb5c7b01a81e674"
+  integrity sha512-29a/BQ7so0nY0SYbJykXLWUqFB2E+6lmBUdL3XO9M4YlVL6jnpvB7UF74qHRROjYAiFeonPgSU+u8EOCPI2Bzg==
   dependencies:
     aws-sdk "^2.431.0"
     ramda "0.25.0"
