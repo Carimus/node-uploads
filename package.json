@@ -74,5 +74,8 @@
         "extends": [
             "@commitlint/config-conventional"
         ]
+    },
+    "dependencies": {
+        "@carimus/node-disks": "^1.2.0"
     }
 }
