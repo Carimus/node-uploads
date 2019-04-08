@@ -16,7 +16,6 @@ import { PathNotUniqueError } from '../errors/PathNotUniqueError';
  * A service for handling uploaded files.
  *
  * TODO Do URL generation for publicly available disks.
- * TODO Support deleting files was @carimus/node-disks supports it
  * TODO Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
  * TODO Support transfer logic for transferring single uploads from one disk to another and in bulk.
  * TODO Support `getTemporaryFile` to copy an upload file to the local filesystem tmp directory for direct manipulation
@@ -214,27 +213,28 @@ export class Uploads {
         return this.repository.create(newFile, meta);
     }
 
-    // /**
-    //  * Delete an uploaded file from the disk.
-    //  *
-    //  * TODO Actually delete off the disk once @carimus/node-disks implements the operation 😅
-    //  *
-    //  * @param upload
-    //  * @param onlyFile
-    //  */
-    // public async delete(upload: Upload, onlyFile: boolean = false): Promise<void> {
-    //     // Ask the repository for info on where and how the upload file is stored.
-    //     const file = await this.repository.getUploadedFileInfo(upload);
-    //
-    //     // Resolve the disk for the file
-    //     const disk = this.disks.getDisk(file.disk);
-    //
-    //     // Delete the upload in the repository before deleting it on the disk
-    //     if (!onlyFile) {
-    //         await this.repository.delete(upload);
-    //     }
-    //
-    //     // Delete the file on the disk (See jsDoc)
-    //     await disk.delete(file.path);
-    // }
+    /**
+     * Delete an uploaded file from the disk.
+     *
+     * @param upload
+     * @param onlyFile If true, only thd disk file is deleted and not the upload in the repository.
+     */
+    public async delete(
+        upload: Upload,
+        onlyFile: boolean = false,
+    ): Promise<void> {
+        // Ask the repository for info on where and how the upload file is stored.
+        const file = await this.repository.getUploadedFileInfo(upload);
+
+        // Resolve the disk for the file
+        const disk = this.disks.getDisk(file.disk);
+
+        // Delete the upload in the repository before deleting it on the disk
+        if (!onlyFile) {
+            await this.repository.delete(upload);
+        }
+
+        // Delete the file on the disk
+        await disk.delete(file.path);
+    }
 }
