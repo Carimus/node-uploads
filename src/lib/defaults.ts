@@ -11,10 +11,12 @@ export function defaultSanitizeFilename(uploadedAs: string): string {
  * Generate a path using the default logic for an instant in time.
  *
  * @param instant
+ * @param hrtime
  * @param sanitizedUploadedAs
  */
 export function defaultGeneratePathForInstant(
     instant: Date,
+    hrtime: [number, number],
     sanitizedUploadedAs: string,
 ): string {
     const year = `${instant.getUTCFullYear()}`.padStart(4, '0');
@@ -23,8 +25,8 @@ export function defaultGeneratePathForInstant(
     const hour = `${instant.getUTCHours()}`.padStart(2, '0');
     const minute = `${instant.getUTCMinutes()}`.padStart(2, '0');
     const second = `${instant.getUTCSeconds()}`.padStart(2, '0');
-    const ms = `${instant.getUTCMilliseconds()}`.padStart(3, '0');
-    return `${year}/${month}/${day}/${hour}${minute}${second}${ms}-${sanitizedUploadedAs}`;
+    const ms = `${hrtime[1]}`.padStart(9, '0');
+    return `${year}/${month}/${day}/${hour}${minute}${second}-${ms}-${sanitizedUploadedAs}`;
 }
 
 /**
@@ -33,5 +35,9 @@ export function defaultGeneratePathForInstant(
  * @param sanitizedUploadedAs
  */
 export function defaultGeneratePath(sanitizedUploadedAs: string): string {
-    return defaultGeneratePathForInstant(new Date(), sanitizedUploadedAs);
+    return defaultGeneratePathForInstant(
+        new Date(),
+        process.hrtime(),
+        sanitizedUploadedAs,
+    );
 }

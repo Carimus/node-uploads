@@ -24,6 +24,11 @@ export interface UploadMeta {
      * The upload context, whatever that means for the application. I.e. `'user_profile'`, `'company_logo'`, or `'*'`
      */
     context?: string,
+
+    /**
+     * Allow any other keys.
+     */
+    [key: string]: any,
 }
 
 /**
@@ -38,7 +43,7 @@ export interface UploadRepository {
      * @param uploadedFile
      * @param meta
      */
-    create: (uploadedFile: UploadedFile, meta: UploadMeta) => Promise<Upload> | Upload,
+    create: (uploadedFile: UploadedFile, meta?: UploadMeta) => Promise<Upload> | Upload,
 
     /**
      * Update an existing Upload from file upload info and meta info.
@@ -49,7 +54,7 @@ export interface UploadRepository {
      * @param newUploadedFile
      * @param newMeta
      */
-    update: (upload: Upload, newUploadedFile: UploadedFile, newMeta: UploadMeta) => Promise<Upload> | Upload,
+    update: (upload: Upload, newUploadedFile: UploadedFile, newMeta?: UploadMeta) => Promise<Upload> | Upload,
 
     /**
      * Delete an upload.
@@ -68,6 +73,13 @@ export interface UploadRepository {
      * @param upload
      */
     getUploadedFileInfo: (upload: Upload) => Promise<UploadedFile> | UploadedFile,
+
+    /**
+     * Get the meta info for an upload that was stored in the repository.
+     *
+     * @param upload
+     */
+    getMeta: (upload: Upload) => Promise<UploadMeta> | UploadMeta,
 }
 
 /**

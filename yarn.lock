@@ -139,9 +139,9 @@
     to-fast-properties "^2.0.0"
 
 "@carimus/node-disks@^1.2.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.6.0.tgz#c1733d8a3965da5fdc4d98c11c6f9fa9b18fad47"
-  integrity sha512-5BEgeucLagOtEZ9R4STxigaEirJtg6rKF12E4AOCcutY7B38s5wj2TEIQ97G6PBXUOF7KEWELitHETbl7z+9GA==
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.7.0.tgz#fcf9c1f9ca275935fc84a4286766266bec00a6f7"
+  integrity sha512-S7eBw5G7ykToLMO3FINDSrI/wbJniau/AGvkWgNWiq0c5nz+QaSqAQ9YB+ZxTpRoeYtCBypNXC7OjREd4uQ4TQ==
   dependencies:
     aws-sdk "^2.431.0"
     fs-extra "^7.0.1"
@@ -2580,6 +2580,11 @@ fast-deep-equal@^2.0.1:
   resolved "https://registry.yarnpkg.com/fast-deep-equal/-/fast-deep-equal-2.0.1.tgz#7b05218ddf9667bf7f370bf7fdb2cb15fdd0aa49"
   integrity sha1-ewUhjd+WZ79/Nwv3/bLLFf3Qqkk=
 
+fast-extend@0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/fast-extend/-/fast-extend-0.0.2.tgz#f5ec42cf40b9460f521a6387dfb52deeed671dbd"
+  integrity sha1-9exCz0C5Rg9SGmOH37Ut7u1nHb0=
+
 fast-glob@^2.2.6:
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-2.2.6.tgz#a5d5b697ec8deda468d85a74035290a025a95295"
@@ -2793,6 +2798,11 @@ fs-minipass@^1.2.5:
   integrity sha512-JhBl0skXjUPCFH7x6x61gQxrKyXsxB5gcgePLZCwfyCGGsTISMoIeObbrvVeP6Xmyaudw4TT43qV2Gz+iyd2oQ==
   dependencies:
     minipass "^2.2.1"
+
+fs-monkey@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/fs-monkey/-/fs-monkey-0.3.3.tgz#7960bb2b1fa2653731b9d0e2e84812a7e8b3664a"
+  integrity sha512-FNUvuTAJ3CqCQb5ELn+qCbGR/Zllhf2HtwsdAtBi59s1WeCjKMT81fHcSu7dwIskqGVK+MmOrb7VOBlq3/SItw==
 
 fs-vacuum@^1.2.10, fs-vacuum@~1.2.10:
   version "1.2.10"
@@ -4859,6 +4869,14 @@ mem@^4.0.0:
     map-age-cleaner "^0.1.1"
     mimic-fn "^2.0.0"
     p-is-promise "^2.0.0"
+
+memfs@^2.15.2:
+  version "2.15.2"
+  resolved "https://registry.yarnpkg.com/memfs/-/memfs-2.15.2.tgz#199b64580cf849ea641d8fac81d96742bfebd26d"
+  integrity sha512-jFC2mc3Aa224nJB824vbJzuiksf3+wPjFSKrXS7bA3o3H0Yy4/bh0R1nAsQyL/P80PVyT56ZowQJ+NGniHWhVQ==
+  dependencies:
+    fast-extend "0.0.2"
+    fs-monkey "^0.3.3"
 
 meow@5.0.0:
   version "5.0.0"

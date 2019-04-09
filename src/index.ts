@@ -5,3 +5,4 @@ export * from './types';
 export * from './lib/Uploads';
 export * from './lib/defaults';
 export * from './errors';
+export * from './support'

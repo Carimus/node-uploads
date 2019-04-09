@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import { DiskManager } from '@carimus/node-disks';
-import { InvalidConfigError } from '../errors/InvalidConfigError';
+import { InvalidConfigError, PathNotUniqueError } from '../errors';
 import {
     Upload,
     UploadedFile,
@@ -10,7 +10,6 @@ import {
 } from '../types';
 import { trimPath } from './utils';
 import { defaultSanitizeFilename, defaultGeneratePath } from './defaults';
-import { PathNotUniqueError } from '../errors/PathNotUniqueError';
 
 /**
  * A service for handling uploaded files.
@@ -68,7 +67,9 @@ export class Uploads {
      */
     public generateStoragePath(sanitizedUploadedAs: string): string {
         const path = this.generatePath(sanitizedUploadedAs);
-        return `/${trimPath(this.config.pathPrefix || '')}/${trimPath(path)}`;
+        return `/${trimPath(`${this.config.pathPrefix || ''}/`)}${trimPath(
+            path,
+        )}`;
     }
 
     /**
@@ -98,7 +99,7 @@ export class Uploads {
         await disk.write(path, fileData);
         // Return a record representing the uploaded file and where it lives on the disk.
         return {
-            disk: diskName,
+            disk: disk.getName() || diskName,
             path,
             uploadedAs: sanitizedUploadedAs,
         };
@@ -113,13 +114,15 @@ export class Uploads {
      * @param originalFile
      */
     public async copy(originalFile: UploadedFile): Promise<UploadedFile> {
-        // Get the current disk
+        // Resolve the disks
         const newDiskName = this.getDefaultDiskName();
+        const newDisk = this.disks.getDisk(newDiskName);
+        const originalDisk = this.disks.getDisk(originalFile.disk);
 
         // Clone the original file upload info, setting the new disk and regenerating the path.
         const newFile: UploadedFile = {
             ...originalFile,
-            disk: newDiskName,
+            disk: newDisk.getName() || newDiskName,
             path: this.generateStoragePath(originalFile.uploadedAs),
         };
 
@@ -136,14 +139,10 @@ export class Uploads {
             );
         }
 
-        // Resolve the disks
-        const originalDisk = this.disks.getDisk(originalFile.disk);
-        const newDisk = this.disks.getDisk(newFile.disk);
-
         // Perform the copy
         await newDisk.write(
-            originalFile.path,
-            await originalDisk.createReadStream(newFile.path),
+            newFile.path,
+            await originalDisk.createReadStream(originalFile.path),
         );
 
         // Return the newly uploaded file
@@ -160,7 +159,7 @@ export class Uploads {
     public async upload(
         fileData: Buffer | Readable,
         uploadedAs: string,
-        meta: UploadMeta = {},
+        meta?: UploadMeta,
     ): Promise<Upload> {
         const uploadedFile = await this.place(fileData, uploadedAs);
         return this.repository.create(uploadedFile, meta);
@@ -179,10 +178,20 @@ export class Uploads {
         upload: Upload,
         fileData: Buffer | Readable,
         uploadedAs: string,
-        meta: UploadMeta = {},
+        meta?: UploadMeta,
     ): Promise<Upload> {
-        const uploadedFile = await this.place(fileData, uploadedAs);
-        return this.repository.update(upload, uploadedFile, meta);
+        // Get the info about the old file and resolve its disk.
+        const oldFile = await this.repository.getUploadedFileInfo(upload);
+        const oldDisk = this.disks.getDisk(oldFile.disk);
+
+        // Place the new file on the default disk
+        const newFile = await this.place(fileData, uploadedAs);
+
+        // Delete the old file from the old disk
+        await oldDisk.delete(oldFile.path);
+
+        // Update the upload in the repository with the new file's data.
+        return this.repository.update(upload, newFile, meta);
     }
 
     /**
@@ -193,13 +202,12 @@ export class Uploads {
      *
      * The original upload will not be touched.
      *
-     *
      * @param original
      * @param meta
      */
     public async duplicate(
         original: Upload,
-        meta: UploadMeta = {},
+        meta?: UploadMeta,
     ): Promise<Upload> {
         // Ask the repository for info on where and how the original upload file is stored.
         const originalFile = await this.repository.getUploadedFileInfo(
@@ -210,7 +218,10 @@ export class Uploads {
         const newFile = await this.copy(originalFile);
 
         // Store the new upload in the repository and return it
-        return this.repository.create(newFile, meta);
+        return this.repository.create(
+            newFile,
+            meta || (await this.repository.getMeta(original)),
+        );
     }
 
     /**

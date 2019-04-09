@@ -24,11 +24,13 @@ TODO
 
 -   [ ] Usage docs
 -   [ ] Detailed API docs
+-   [ ] More tests:
+    -   Test errors when bad `defaultGeneratePath` and/or `defaultSanitizeFilename` are provided.
 -   [ ] Do URL generation for publicly available disks.
--   [ ] Support deleting files was @carimus/node-disks supports it
 -   [ ] Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
 -   [ ] Support transfer logic for transferring single uploads from one disk to another and in bulk.
 -   [ ] Support `getTemporaryFile` to copy an upload file to the local filesystem tmp directory for direct manipulation
+-   [ ] Instead of using an `Upload` type that is `any`, we should use generics
 
 ## Development
 
