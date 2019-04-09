@@ -1,1 +1,4 @@
-export { MemoryRepository } from './MemoryRepository';
+export {
+    MemoryRepository,
+    MemoryRepositoryUploadIdentifier,
+} from './MemoryRepository';

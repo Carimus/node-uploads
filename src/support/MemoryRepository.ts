@@ -1,21 +1,25 @@
 import { UploadedFile, UploadMeta, UploadRepository } from '../types';
 
+export type MemoryRepositoryUploadIdentifier = number;
+
 export interface MemoryRepositoryRecord {
-    id: number;
+    id: MemoryRepositoryUploadIdentifier;
     file: UploadedFile;
     meta: UploadMeta;
 }
 
-type MemoryRepositoryUpload = MemoryRepositoryRecord | number;
-
-export class MemoryRepository implements UploadRepository {
-    private database: Map<number, MemoryRepositoryRecord> = new Map();
-    private counter: number = 0;
+export class MemoryRepository
+    implements UploadRepository<MemoryRepositoryUploadIdentifier> {
+    private database: Map<
+        MemoryRepositoryUploadIdentifier,
+        MemoryRepositoryRecord
+    > = new Map();
+    private counter: MemoryRepositoryUploadIdentifier = 0;
 
     /**
      * Get the next available ID. Mimics auto-increment starting at 1.
      */
-    private getNextID(): number {
+    private getNextID(): MemoryRepositoryUploadIdentifier {
         return ++this.counter;
     }
 
@@ -27,21 +31,22 @@ export class MemoryRepository implements UploadRepository {
     public async create(
         file: UploadedFile,
         meta?: UploadMeta,
-    ): Promise<MemoryRepositoryRecord> {
+    ): Promise<MemoryRepositoryUploadIdentifier> {
         const id = this.getNextID();
         const upload = { id, file, meta: meta || {} };
         this.database.set(id, upload);
-        return upload;
+        return upload.id;
     }
 
     /**
      * Resolve a record or ID to a fresh record straight from the database.
-     * @param upload
+     * @param id
      */
-    private resolve(upload: MemoryRepositoryUpload): MemoryRepositoryRecord {
-        const id = (typeof upload === 'number' ? upload : upload.id) || null;
+    private resolve(
+        id: MemoryRepositoryUploadIdentifier,
+    ): MemoryRepositoryRecord {
         if (!id) {
-            throw new Error(`Bad identifier or malformed record: ${id}`);
+            throw new Error(`Bad identifier: ${id}`);
         }
         const existingUpload = this.database.get(id);
         if (!existingUpload) {
@@ -57,10 +62,10 @@ export class MemoryRepository implements UploadRepository {
      * @param meta
      */
     public async update(
-        upload: MemoryRepositoryUpload,
+        upload: MemoryRepositoryUploadIdentifier,
         file: UploadedFile,
         meta?: UploadMeta,
-    ): Promise<MemoryRepositoryRecord> {
+    ): Promise<MemoryRepositoryUploadIdentifier> {
         const existingUpload = this.resolve(upload);
         const updatedUpload = {
             ...existingUpload,
@@ -68,14 +73,16 @@ export class MemoryRepository implements UploadRepository {
             meta: meta || existingUpload.meta || {},
         };
         this.database.set(existingUpload.id, updatedUpload);
-        return updatedUpload;
+        return updatedUpload.id;
     }
 
     /**
      * @inheritDoc
      * @param upload
      */
-    public async delete(upload: MemoryRepositoryUpload): Promise<void> {
+    public async delete(
+        upload: MemoryRepositoryUploadIdentifier,
+    ): Promise<void> {
         const { id } = this.resolve(upload);
         this.database.delete(id);
     }
@@ -85,7 +92,7 @@ export class MemoryRepository implements UploadRepository {
      * @param upload
      */
     public async getUploadedFileInfo(
-        upload: MemoryRepositoryUpload,
+        upload: MemoryRepositoryUploadIdentifier,
     ): Promise<UploadedFile> {
         const existingUpload = this.resolve(upload);
         return existingUpload.file;
@@ -95,7 +102,9 @@ export class MemoryRepository implements UploadRepository {
      * @inheritDoc
      * @param upload
      */
-    public async getMeta(upload: MemoryRepositoryUpload): Promise<UploadMeta> {
+    public async getMeta(
+        upload: MemoryRepositoryUploadIdentifier,
+    ): Promise<UploadMeta> {
         const existingUpload = this.resolve(upload);
         return existingUpload.meta;
     }
@@ -105,7 +114,7 @@ export class MemoryRepository implements UploadRepository {
      * @param upload
      */
     public async find(
-        upload: MemoryRepositoryUpload,
+        upload: MemoryRepositoryUploadIdentifier,
     ): Promise<MemoryRepositoryRecord> {
         return this.resolve(upload);
     }
@@ -115,13 +124,22 @@ export class MemoryRepository implements UploadRepository {
      *
      * @param id
      */
-    public log(id?: number): void {
-        const rawEntries: [number, MemoryRepositoryRecord | undefined][] = id
-            ? [[id, this.database.get(id)]]
-            : [...this.database.entries()];
-        const entries: [number, MemoryRepositoryRecord][] = rawEntries.filter(
-            (entry: [number, MemoryRepositoryRecord | undefined]) => !!entry[1],
-        ) as [number, MemoryRepositoryRecord][];
+    public log(id?: MemoryRepositoryUploadIdentifier): void {
+        const rawEntries: [
+            MemoryRepositoryUploadIdentifier,
+            MemoryRepositoryRecord | undefined
+        ][] = id ? [[id, this.database.get(id)]] : [...this.database.entries()];
+        const entries: [
+            MemoryRepositoryUploadIdentifier,
+            MemoryRepositoryRecord
+        ][] = rawEntries.filter(
+            (
+                entry: [
+                    MemoryRepositoryUploadIdentifier,
+                    MemoryRepositoryRecord | undefined
+                ],
+            ) => !!entry[1],
+        ) as [MemoryRepositoryUploadIdentifier, MemoryRepositoryRecord][];
         console.table(
             entries.map(([id, record]) => {
                 return { id, ...record.file, meta: record.meta };

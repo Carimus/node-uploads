@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
 import { DiskDriver, DiskManager } from '@carimus/node-disks';
-import { MemoryRepository } from '../support';
+import { MemoryRepository, MemoryRepositoryUploadIdentifier } from '../support';
 import { Uploads } from './Uploads';
 import { UploadMeta } from '../types';
 
@@ -18,14 +18,14 @@ const disks = {
 function setup(): {
     diskManager: DiskManager;
     repository: MemoryRepository;
-    uploads: Uploads;
+    uploads: Uploads<MemoryRepositoryUploadIdentifier>;
 } {
     const diskManager = new DiskManager(disks);
     const repository = new MemoryRepository();
     return {
         diskManager,
         repository,
-        uploads: new Uploads({
+        uploads: new Uploads<MemoryRepositoryUploadIdentifier>({
             disks: diskManager,
             repository,
         }),
@@ -134,21 +134,17 @@ test('Uploads service can duplicate an upload, creating a new repository record 
     const duplicateOldMeta = await uploads.duplicate(original);
 
     // Check the repository for the original file data and the new file data
-    const originalFileRecord = await repository.find(original.id);
-    const duplicateFileRecord = await repository.find(duplicate.id);
-    const duplicateOldMetaFileRecord = await repository.find(
-        duplicateOldMeta.id,
-    );
+    const originalFileRecord = await repository.find(original);
+    const duplicateFileRecord = await repository.find(duplicate);
+    const duplicateOldMetaFileRecord = await repository.find(duplicateOldMeta);
     expect(originalFileRecord.meta).toMatchObject(files.normal.meta);
     expect(duplicateFileRecord.meta).toMatchObject(duplicateMeta);
     expect(originalFileRecord).not.toMatchObject(duplicateFileRecord);
     expect(duplicateOldMetaFileRecord.meta).toMatchObject(files.normal.meta);
 
     // Check the disk for the original file and the new file
-    const originalFileInfo = await repository.getUploadedFileInfo(original.id);
-    const duplicateFileInfo = await repository.getUploadedFileInfo(
-        duplicate.id,
-    );
+    const originalFileInfo = await repository.getUploadedFileInfo(original);
+    const duplicateFileInfo = await repository.getUploadedFileInfo(duplicate);
     const originalFileData = await diskManager
         .getDisk(originalFileInfo.disk)
         .read(originalFileInfo.path);
@@ -187,7 +183,7 @@ test('Uploads service can update, updating existing repository records and delet
     const updatedNewMetaFileInfo = await repository.getUploadedFileInfo(
         updatedNewMeta,
     );
-    expect(original.id).toBe(updatedNewMeta.id);
+    expect(original).toBe(updatedNewMeta);
     await expect(
         diskManager.getDisk(originalFileInfo.disk).read(originalFileInfo.path),
     ).rejects.toBeTruthy();
@@ -290,12 +286,15 @@ test('Uploads service can create temp files for local manipulation from uploads'
         .read(fileInfo.path);
 
     // Get the temp file for it and check to make sure their contents match
-    const tempPath = await uploads.withTempFile(upload, async (path) => {
-        const tempFileData = await readFileFromLocalFilesystem(path);
-        expect(tempFileData.toString('base64')).toBe(
-            uploadedFileData.toString('base64'),
-        );
-    });
+    const tempPath = await uploads.withTempFile(
+        upload,
+        async (path: string) => {
+            const tempFileData = await readFileFromLocalFilesystem(path);
+            expect(tempFileData.toString('base64')).toBe(
+                uploadedFileData.toString('base64'),
+            );
+        },
+    );
 
     // Ensure that once the callback is completed, the file doesn't exist since we didn't tell it not to cleanup
     expect(tempPath).toBeTruthy();

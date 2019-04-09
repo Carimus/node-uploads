@@ -29,7 +29,6 @@ TODO
 -   [ ] Do URL generation for publicly available disks.
 -   [ ] Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
 -   [ ] Support transfer logic for transferring single uploads from one disk to another and in bulk.
--   [ ] Instead of using an `Upload` type that is `any`, we should use generics
 
 ## Development
 

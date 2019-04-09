@@ -1,17 +1,20 @@
 import { DiskManager, DiskManagerConfig } from '@carimus/node-disks';
 
 /**
- * Represents a persisted/stored Upload, whatever that means in the context of the application. Often this is
- * a unique database record but it could just also be the ID of that database record.
- */
-export type Upload = any;
-
-/**
  * Represents a file stored on a disk that the uploads service knows about.
  */
 export interface UploadedFile {
+    /**
+     * The disk that the file lives on.
+     */
     disk: string,
+    /**
+     * The path on the disk that the file lives at.
+     */
     path: string,
+    /**
+     * The sanitized filename that the file was uploaded with.
+     */
     uploadedAs: string,
 }
 
@@ -34,7 +37,7 @@ export interface UploadMeta {
 /**
  * An implementation that can read, create, update, and delete Uploads, typically to persist them to a database.
  */
-export interface UploadRepository {
+export interface UploadRepository<UploadIdentifier> {
     /**
      * Create an Upload from file upload info and meta info.
      *
@@ -43,7 +46,7 @@ export interface UploadRepository {
      * @param uploadedFile
      * @param meta
      */
-    create: (uploadedFile: UploadedFile, meta?: UploadMeta) => Promise<Upload> | Upload,
+    create: (uploadedFile: UploadedFile, meta?: UploadMeta) => Promise<UploadIdentifier> | UploadIdentifier,
 
     /**
      * Update an existing Upload from file upload info and meta info.
@@ -54,7 +57,7 @@ export interface UploadRepository {
      * @param newUploadedFile
      * @param newMeta
      */
-    update: (upload: Upload, newUploadedFile: UploadedFile, newMeta?: UploadMeta) => Promise<Upload> | Upload,
+    update: (upload: UploadIdentifier, newUploadedFile: UploadedFile, newMeta?: UploadMeta) => Promise<UploadIdentifier> | UploadIdentifier,
 
     /**
      * Delete an upload.
@@ -63,7 +66,7 @@ export interface UploadRepository {
      *
      * @param upload
      */
-    delete: (upload: Upload) => Promise<void> | void,
+    delete: (upload: UploadIdentifier) => Promise<void> | void,
 
     /**
      * Get the uploaded file info that an upload is associated with so that it can be tracked down.
@@ -72,20 +75,20 @@ export interface UploadRepository {
      *
      * @param upload
      */
-    getUploadedFileInfo: (upload: Upload) => Promise<UploadedFile> | UploadedFile,
+    getUploadedFileInfo: (upload: UploadIdentifier) => Promise<UploadedFile> | UploadedFile,
 
     /**
      * Get the meta info for an upload that was stored in the repository.
      *
      * @param upload
      */
-    getMeta: (upload: Upload) => Promise<UploadMeta> | UploadMeta,
+    getMeta: (upload: UploadIdentifier) => Promise<UploadMeta> | UploadMeta,
 }
 
 /**
  * The configuration for the uploads service.
  */
-export interface UploadsConfig {
+export interface UploadsConfig<UploadIdentifier> {
     /**
      * A `node-disks` `DiskManager` instance to use OR a config object that can
      * be used to initialize one.
@@ -97,7 +100,7 @@ export interface UploadsConfig {
      *
      * @see UploadRepository
      */
-    repository: UploadRepository,
+    repository: UploadRepository<UploadIdentifier>,
 
     /**
      * The default disk to use for storing new uploads.

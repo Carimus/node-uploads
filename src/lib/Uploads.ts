@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import { DiskManager, pipeStreams } from '@carimus/node-disks';
 import { InvalidConfigError, PathNotUniqueError } from '../errors';
 import {
-    Upload,
     UploadedFile,
     UploadMeta,
     UploadRepository,
@@ -19,12 +18,12 @@ import { defaultSanitizeFilename, defaultGeneratePath } from './defaults';
  * TODO Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
  * TODO Support transfer logic for transferring single uploads from one disk to another and in bulk.
  */
-export class Uploads {
-    private config: UploadsConfig;
-    private repository: UploadRepository;
+export class Uploads<UploadIdentifier> {
+    private config: UploadsConfig<UploadIdentifier>;
+    private repository: UploadRepository<UploadIdentifier>;
     private disks: DiskManager;
 
-    public constructor(config: UploadsConfig) {
+    public constructor(config: UploadsConfig<UploadIdentifier>) {
         this.config = config;
         this.repository = config.repository;
         if (typeof config.disks === 'object') {
@@ -160,7 +159,7 @@ export class Uploads {
         fileData: Buffer | Readable,
         uploadedAs: string,
         meta?: UploadMeta,
-    ): Promise<Upload> {
+    ): Promise<UploadIdentifier> {
         const uploadedFile = await this.place(fileData, uploadedAs);
         return this.repository.create(uploadedFile, meta);
     }
@@ -175,11 +174,11 @@ export class Uploads {
      * @param meta
      */
     public async update(
-        upload: Upload,
+        upload: UploadIdentifier,
         fileData: Buffer | Readable,
         uploadedAs: string,
         meta?: UploadMeta,
-    ): Promise<Upload> {
+    ): Promise<UploadIdentifier> {
         // Get the info about the old file and resolve its disk.
         const oldFile = await this.repository.getUploadedFileInfo(upload);
         const oldDisk = this.disks.getDisk(oldFile.disk);
@@ -206,9 +205,9 @@ export class Uploads {
      * @param meta
      */
     public async duplicate(
-        original: Upload,
+        original: UploadIdentifier,
         meta?: UploadMeta,
-    ): Promise<Upload> {
+    ): Promise<UploadIdentifier> {
         // Ask the repository for info on where and how the original upload file is stored.
         const originalFile = await this.repository.getUploadedFileInfo(
             original,
@@ -231,7 +230,7 @@ export class Uploads {
      * @param onlyFile If true, only thd disk file is deleted and not the upload in the repository.
      */
     public async delete(
-        upload: Upload,
+        upload: UploadIdentifier,
         onlyFile: boolean = false,
     ): Promise<void> {
         // Ask the repository for info on where and how the upload file is stored.
@@ -265,7 +264,7 @@ export class Uploads {
      * @param execute
      */
     public async withTempFile(
-        upload: Upload,
+        upload: UploadIdentifier,
         execute: ((path: string) => Promise<void> | void) | null = null,
     ): Promise<string> {
         // Ask the repository for info on where and how the upload file is stored.
