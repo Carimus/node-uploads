@@ -13,10 +13,6 @@ import { defaultSanitizeFilename, defaultGeneratePath } from './defaults';
 
 /**
  * A service for handling uploaded files.
- *
- * TODO Do URL generation for publicly available disks.
- * TODO Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
- * TODO Support transfer logic for transferring single uploads from one disk to another and in bulk.
  */
 export class Uploads<UploadIdentifier> {
     private config: UploadsConfig<UploadIdentifier>;
@@ -82,18 +78,23 @@ export class Uploads<UploadIdentifier> {
      * Take the file data and raw client-provided filename and place that file on the disk in the proper
      * location by sanitizing the filename and generating a unique path for it.
      *
+     * This doesn't touch the repository. Use `upload` to perform legitimate uploads.
+     *
+     * @see upload
+     *
      * @param fileData
      * @param uploadedAs
+     * @param diskName
      */
     public async place(
         fileData: Buffer | Readable,
         uploadedAs: string,
+        diskName: string = this.getDefaultDiskName(),
     ): Promise<UploadedFile> {
         // Generate a filename and path.
         const sanitizedUploadedAs = this.sanitizeFilename(uploadedAs);
         const path = this.generateStoragePath(sanitizedUploadedAs);
         // Grab a disk instance and write the data to the disk.
-        const diskName = this.getDefaultDiskName();
         const disk = this.disks.getDisk(diskName);
         await disk.write(path, fileData);
         // Return a record representing the uploaded file and where it lives on the disk.
@@ -105,16 +106,23 @@ export class Uploads<UploadIdentifier> {
     }
 
     /**
-     * Take an uploaded file and copy it to a new unique generated location on the default disk, regardless of the
-     * source disk.
+     * Take an uploaded file and copy it to a new unique generated location on the default disk (or the specified disk,
+     * regardless of the source disk). By default the path will be regenerated but this can be disabled, noting that
+     * without regeneration, it will still use the old pathPrefix and not any new one if its changed in the config
+     * (since the pathPrefix is applied during the generation of the filename).
      *
      * TODO Once @carimus/node-disks supports the copy operation, use that when oldDisk === newDisk
      *
      * @param originalFile
+     * @param newDiskName
+     * @param regeneratePath
      */
-    public async copy(originalFile: UploadedFile): Promise<UploadedFile> {
+    public async copy(
+        originalFile: UploadedFile,
+        newDiskName: string = this.getDefaultDiskName(),
+        regeneratePath: boolean = true,
+    ): Promise<UploadedFile> {
         // Resolve the disks
-        const newDiskName = this.getDefaultDiskName();
         const newDisk = this.disks.getDisk(newDiskName);
         const originalDisk = this.disks.getDisk(originalFile.disk);
 
@@ -122,7 +130,9 @@ export class Uploads<UploadIdentifier> {
         const newFile: UploadedFile = {
             ...originalFile,
             disk: newDisk.getName() || newDiskName,
-            path: this.generateStoragePath(originalFile.uploadedAs),
+            path: regeneratePath
+                ? this.generateStoragePath(originalFile.uploadedAs)
+                : originalFile.path,
         };
 
         // Throw if the locations are exactly the same.
@@ -154,14 +164,18 @@ export class Uploads<UploadIdentifier> {
      * @param fileData
      * @param uploadedAs
      * @param meta
+     * @param diskName
      */
     public async upload(
         fileData: Buffer | Readable,
         uploadedAs: string,
-        meta?: UploadMeta,
+        meta: UploadMeta | null = null,
+        diskName?: string,
     ): Promise<UploadIdentifier> {
-        const uploadedFile = await this.place(fileData, uploadedAs);
-        return this.repository.create(uploadedFile, meta);
+        const uploadedFile = await this.place(fileData, uploadedAs, diskName);
+        return meta
+            ? this.repository.create(uploadedFile, meta)
+            : this.repository.create(uploadedFile);
     }
 
     /**
@@ -172,41 +186,49 @@ export class Uploads<UploadIdentifier> {
      * @param fileData
      * @param uploadedAs
      * @param meta
+     * @param diskName
      */
     public async update(
         upload: UploadIdentifier,
         fileData: Buffer | Readable,
         uploadedAs: string,
-        meta?: UploadMeta,
+        meta: UploadMeta | null = null,
+        diskName?: string,
     ): Promise<UploadIdentifier> {
         // Get the info about the old file and resolve its disk.
         const oldFile = await this.repository.getUploadedFileInfo(upload);
         const oldDisk = this.disks.getDisk(oldFile.disk);
 
         // Place the new file on the default disk
-        const newFile = await this.place(fileData, uploadedAs);
+        const newFile = await this.place(fileData, uploadedAs, diskName);
 
         // Delete the old file from the old disk
         await oldDisk.delete(oldFile.path);
 
         // Update the upload in the repository with the new file's data.
-        return this.repository.update(upload, newFile, meta);
+        return meta
+            ? this.repository.update(upload, newFile, meta)
+            : this.repository.update(upload, newFile);
     }
 
     /**
      * Duplicate an existing upload to the default disk no matter what the current uploads disk is and create it in
      * the repository.
      *
-     * This will regenerate the path even if the upload is remaining on the same disk.
+     * This will regenerate the path even if the upload is remaining on the same disk by default.
      *
      * The original upload will not be touched.
      *
      * @param original
      * @param meta
+     * @param newDiskName
+     * @param regeneratePath
      */
     public async duplicate(
         original: UploadIdentifier,
-        meta?: UploadMeta,
+        meta: UploadMeta | null = null,
+        newDiskName?: string,
+        regeneratePath: boolean = true,
     ): Promise<UploadIdentifier> {
         // Ask the repository for info on where and how the original upload file is stored.
         const originalFile = await this.repository.getUploadedFileInfo(
@@ -214,13 +236,55 @@ export class Uploads<UploadIdentifier> {
         );
 
         // Copy the original file to the new file location.
-        const newFile = await this.copy(originalFile);
+        const newFile = await this.copy(
+            originalFile,
+            newDiskName,
+            regeneratePath,
+        );
 
         // Store the new upload in the repository and return it
         return this.repository.create(
             newFile,
             meta || (await this.repository.getMeta(original)),
         );
+    }
+
+    /**
+     * Transfer an upload from its current disk to a new disk, defaulting to the configured default disk. By default,
+     * its path will not be regenerated.
+     *
+     * This will update the upload in the repository
+     *
+     * @param upload
+     * @param newDiskName
+     * @param regeneratePath
+     * @param newMeta New meta to use for the upload.
+     * @return The upload if the file was transferred, false if it was not (same disk and path / no op)
+     */
+    public async transfer(
+        upload: UploadIdentifier,
+        newMeta: UploadMeta | null = null,
+        newDiskName?: string,
+        regeneratePath: boolean = false,
+    ): Promise<UploadIdentifier | false> {
+        // Get the details of where the old file is stored.
+        const oldFile = await this.repository.getUploadedFileInfo(upload);
+
+        // Copy the old file to the new disk at the old path (or regenerate the path if specified)
+        let newFile = null;
+        try {
+            newFile = await this.copy(oldFile, newDiskName, regeneratePath);
+        } catch (error) {
+            if (error instanceof PathNotUniqueError) {
+                return false;
+            }
+            throw error;
+        }
+
+        // Update the upload in the repository with the new file data
+        return newMeta
+            ? this.repository.update(upload, newFile, newMeta)
+            : this.repository.update(upload, newFile);
     }
 
     /**

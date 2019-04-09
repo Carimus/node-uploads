@@ -13,6 +13,9 @@ const disks = {
     memory: {
         driver: DiskDriver.Memory,
     },
+    nonDefaultMemory: {
+        driver: DiskDriver.Memory,
+    },
 };
 
 function setup(): {
@@ -26,6 +29,7 @@ function setup(): {
         diskManager,
         repository,
         uploads: new Uploads<MemoryRepositoryUploadIdentifier>({
+            defaultDisk: 'default',
             disks: diskManager,
             repository,
         }),
@@ -313,4 +317,105 @@ test('Uploads service can create temp files for local manipulation from uploads'
     expect(
         deleteFromLocalFilesystem(persistentTempPath),
     ).resolves.toBeUndefined();
+});
+
+test('Uploads service can transfer an upload from non-default disk to default one.', async () => {
+    const { diskManager, repository, uploads } = setup();
+
+    // Intentionally upload a file to the non-default disk
+    const upload = await uploads.upload(
+        files.normal.data,
+        files.normal.uploadedAs,
+        files.normal.meta,
+        'nonDefaultMemory',
+    );
+    const fileInfo = await repository.getUploadedFileInfo(upload);
+
+    // Ensure it was actually uploaded to the non-default disk we were expecting.
+    expect(diskManager.getDisk('nonDefaultMemory').getName()).toBe(
+        fileInfo.disk,
+    );
+    const fileData = await diskManager
+        .getDisk('nonDefaultMemory')
+        .read(fileInfo.path);
+    expect(fileData.toString('base64')).toBe(
+        files.normal.data.toString('base64'),
+    );
+
+    // Initiate the transfer to the default disk
+    await uploads.transfer(upload);
+
+    // Check that it moved disks and that the path stayed the same (the default behaviour)
+    const newFileInfo = await repository.getUploadedFileInfo(upload);
+    expect(newFileInfo.disk).not.toBe(fileInfo.disk);
+    expect(newFileInfo.path).toBe(fileInfo.path);
+
+    // Ensure the file is actually on the new disk
+    const newFileData = await diskManager
+        .getDisk(newFileInfo.disk)
+        .read(newFileInfo.path);
+    expect(newFileData.toString('base64')).toBe(
+        files.normal.data.toString('base64'),
+    );
+});
+
+test('Uploads service can transfer an upload from default disk to a non-default one.', async () => {
+    const { diskManager, repository, uploads } = setup();
+
+    // Intentionally upload a file to the default disk
+    const upload = await uploads.upload(
+        files.normal.data,
+        files.normal.uploadedAs,
+        files.normal.meta,
+    );
+    const fileInfo = await repository.getUploadedFileInfo(upload);
+
+    // Ensure it was actually uploaded to the default disk we were expecting.
+    expect(diskManager.getDisk('default').getName()).toBe(fileInfo.disk);
+    const fileData = await diskManager.getDisk('default').read(fileInfo.path);
+    expect(fileData.toString('base64')).toBe(
+        files.normal.data.toString('base64'),
+    );
+
+    // Initiate the transfer to the non-default disk
+    await uploads.transfer(upload, null, 'nonDefaultMemory');
+
+    // Check that it moved disks and that the path stayed the same (the default behaviour)
+    const newFileInfo = await repository.getUploadedFileInfo(upload);
+    expect(newFileInfo.disk).not.toBe(fileInfo.disk);
+    expect(newFileInfo.disk).toBe(
+        diskManager.getDisk('nonDefaultMemory').getName(),
+    );
+    expect(newFileInfo.path).toBe(fileInfo.path);
+
+    // Ensure the file is actually on the new disk
+    const newFileData = await diskManager
+        .getDisk(newFileInfo.disk)
+        .read(newFileInfo.path);
+    expect(newFileData.toString('base64')).toBe(
+        files.normal.data.toString('base64'),
+    );
+});
+
+test('Uploads service can transfer and regenerate path.', async () => {
+    const { diskManager, repository, uploads } = setup();
+
+    // Intentionally upload a file to the default disk
+    const upload = await uploads.upload(
+        files.normal.data,
+        files.normal.uploadedAs,
+        files.normal.meta,
+    );
+    const fileInfo = await repository.getUploadedFileInfo(upload);
+
+    // Initiate the transfer to the non-default disk indicating filename should be regenerated
+    await uploads.transfer(upload, null, 'nonDefaultMemory', true);
+
+    // Check that it moved disks and that the path changed
+    const newFileInfo = await repository.getUploadedFileInfo(upload);
+    expect(newFileInfo.disk).not.toBe(fileInfo.disk);
+    expect(newFileInfo.disk).toBe(
+        diskManager.getDisk('nonDefaultMemory').getName(),
+    );
+    expect(newFileInfo.path).not.toBe(fileInfo.path);
 });

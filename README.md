@@ -26,9 +26,7 @@ TODO
 -   [ ] Detailed API docs
 -   [ ] More tests:
     -   Test errors when bad `defaultGeneratePath` and/or `defaultSanitizeFilename` are provided.
--   [ ] Do URL generation for publicly available disks.
--   [ ] Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
--   [ ] Support transfer logic for transferring single uploads from one disk to another and in bulk.
+-   [ ] Do permanent and temporary (e.g. presigned URLs for S3 buckets) URL generation.
 
 ## Development
 
