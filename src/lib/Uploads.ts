@@ -1,5 +1,6 @@
 import { Readable } from 'stream';
-import { DiskManager } from '@carimus/node-disks';
+import * as fs from 'fs';
+import { DiskManager, pipeStreams } from '@carimus/node-disks';
 import { InvalidConfigError, PathNotUniqueError } from '../errors';
 import {
     Upload,
@@ -8,7 +9,7 @@ import {
     UploadRepository,
     UploadsConfig,
 } from '../types';
-import { trimPath } from './utils';
+import { trimPath, withTempFile } from './utils';
 import { defaultSanitizeFilename, defaultGeneratePath } from './defaults';
 
 /**
@@ -17,7 +18,6 @@ import { defaultSanitizeFilename, defaultGeneratePath } from './defaults';
  * TODO Do URL generation for publicly available disks.
  * TODO Support temporary URLs (e.g. presigned URLs for S3 buckets) for disks that support it
  * TODO Support transfer logic for transferring single uploads from one disk to another and in bulk.
- * TODO Support `getTemporaryFile` to copy an upload file to the local filesystem tmp directory for direct manipulation
  */
 export class Uploads {
     private config: UploadsConfig;
@@ -247,5 +247,54 @@ export class Uploads {
 
         // Delete the file on the disk
         await disk.delete(file.path);
+    }
+
+    /**
+     * Download the file to the local disk as a temporary file for operations that require local data manipuation
+     * and which can't handle Buffers, i.e. operations expected to be performed on large files where it's easier to
+     * deal with the data in chunks off of the disk or something instead of keeping them in a Buffer in memory in their
+     * entirety.
+     *
+     * This methods streams the data directly to the local filesystem so large files shouldn't cause any memory issues.
+     *
+     * If an `execute` callback is not provided, the cleanup step will be skipped and the path that this resolves to
+     * will exist and can be manipulated directly. IMPORTANT: in such a scenario, the caller is responsible for
+     * deleting the file when they're done with it.
+     *
+     * @param upload
+     * @param execute
+     */
+    public async withTempFile(
+        upload: Upload,
+        execute: ((path: string) => Promise<void> | void) | null = null,
+    ): Promise<string> {
+        // Ask the repository for info on where and how the upload file is stored.
+        const uploadedFile = await this.repository.getUploadedFileInfo(upload);
+        // Resolve the disk for the file.
+        const disk = this.disks.getDisk(uploadedFile.disk);
+        // Generate a descriptive postfix for the temp file that isn't too long.
+        const postfix = `-${uploadedFile.uploadedAs}`.slice(-50);
+        // Create a temp file, write the upload's file data to it, and pass its path to
+        return withTempFile(
+            async (path: string) => {
+                // Create a write stream to the temp file that will auto close once the stream is fully piped.
+                const tempFileWriteStream = fs.createWriteStream(path, {
+                    autoClose: true,
+                });
+                // Create a read stream for the file on the disk.
+                const diskFileReadStream = await disk.createReadStream(
+                    uploadedFile.path,
+                );
+                // Pipe the disk read stream to the temp file write stream.
+                await pipeStreams(diskFileReadStream, tempFileWriteStream);
+                // Run the caller callback if it was provided.
+                if (execute) {
+                    await execute(path);
+                }
+            },
+            // Skip clean up if no execute callback is provided.
+            !execute,
+            { postfix },
+        );
     }
 }

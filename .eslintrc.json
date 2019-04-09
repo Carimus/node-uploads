@@ -33,6 +33,7 @@
         "node/no-unsupported-features/es-syntax": "off",
         "@typescript-eslint/explicit-function-return-type": "error",
         "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "error",
         "curly": ["error", "all"],
         "max-len": ["error", { "code": 140, "ignoreUrls": true }],
         "no-undefined": "error",

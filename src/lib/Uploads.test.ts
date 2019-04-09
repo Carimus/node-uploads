@@ -1,7 +1,12 @@
+import * as fs from 'fs';
+import { promisify } from 'util';
 import { DiskDriver, DiskManager } from '@carimus/node-disks';
 import { MemoryRepository } from '../support';
 import { Uploads } from './Uploads';
 import { UploadMeta } from '../types';
+
+const readFileFromLocalFilesystem = promisify(fs.readFile);
+const deleteFromLocalFilesystem = promisify(fs.unlink);
 
 const disks = {
     default: 'memory',
@@ -46,7 +51,18 @@ const files: {
     weirdName: {
         uploadedAs: '.~my~cool~data~&^%$*(¶•ª•.csv',
         data: Buffer.from('a,b,c\nfoo,bar,baz\n1,2,3\n', 'utf8'),
-        meta: { context: 'test', isFoo: false, isImage: true },
+        meta: { context: 'test', isFoo: false, isImage: false },
+    },
+    longName: {
+        uploadedAs:
+            '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.csv',
+        data: Buffer.from('a,b,c\nfoo,bar,baz\n1,2,3\n', 'utf8'),
+        meta: {
+            context: 'test',
+            isFoo: false,
+            isImage: false,
+            isSuperLong: true,
+        },
     },
 };
 
@@ -257,4 +273,45 @@ test('Uploads service can delete only the file', async () => {
     await expect(
         diskManager.getDisk(fileInfo.disk).read(fileInfo.path),
     ).rejects.toBeTruthy();
+});
+
+test('Uploads service can create temp files for local manipulation from uploads', async () => {
+    const { diskManager, repository, uploads } = setup();
+
+    // Upload a file
+    const upload = await uploads.upload(
+        files.longName.data,
+        files.longName.uploadedAs,
+        files.longName.meta,
+    );
+    const fileInfo = await repository.getUploadedFileInfo(upload);
+    const uploadedFileData = await diskManager
+        .getDisk(fileInfo.disk)
+        .read(fileInfo.path);
+
+    // Get the temp file for it and check to make sure their contents match
+    const tempPath = await uploads.withTempFile(upload, async (path) => {
+        const tempFileData = await readFileFromLocalFilesystem(path);
+        expect(tempFileData.toString('base64')).toBe(
+            uploadedFileData.toString('base64'),
+        );
+    });
+
+    // Ensure that once the callback is completed, the file doesn't exist since we didn't tell it not to cleanup
+    expect(tempPath).toBeTruthy();
+    await expect(readFileFromLocalFilesystem(tempPath)).rejects.toBeTruthy();
+
+    // Do the same stuff again but using the bypass cleanup approach to take cleanup into our own hands
+    const persistentTempPath = await uploads.withTempFile(upload);
+    expect(persistentTempPath).toBeTruthy();
+    const persistentTempFileData = await readFileFromLocalFilesystem(
+        persistentTempPath,
+    );
+    expect(persistentTempFileData.toString('base64')).toBe(
+        uploadedFileData.toString('base64'),
+    );
+    // Note that we use `.resolves.toBeUndefined()` to verify the file is deleted (unlink resolves with void/undefined)
+    expect(
+        deleteFromLocalFilesystem(persistentTempPath),
+    ).resolves.toBeUndefined();
 });
