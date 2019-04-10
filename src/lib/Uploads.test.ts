@@ -378,7 +378,7 @@ test('Uploads service can transfer an upload from default disk to a non-default 
     );
 
     // Initiate the transfer to the non-default disk
-    await uploads.transfer(upload, null, 'nonDefaultMemory');
+    await uploads.transfer(upload, 'nonDefaultMemory');
 
     // Check that it moved disks and that the path stayed the same (the default behaviour)
     const newFileInfo = await repository.getUploadedFileInfo(upload);
@@ -409,7 +409,7 @@ test('Uploads service can transfer and regenerate path.', async () => {
     const fileInfo = await repository.getUploadedFileInfo(upload);
 
     // Initiate the transfer to the non-default disk indicating filename should be regenerated
-    await uploads.transfer(upload, null, 'nonDefaultMemory', true);
+    await uploads.transfer(upload, 'nonDefaultMemory', null, true);
 
     // Check that it moved disks and that the path changed
     const newFileInfo = await repository.getUploadedFileInfo(upload);

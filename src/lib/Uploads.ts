@@ -257,14 +257,14 @@ export class Uploads<Upload> {
      *
      * @param upload
      * @param newDiskName
-     * @param regeneratePath
      * @param newMeta New meta to use for the upload.
+     * @param regeneratePath
      * @return The upload if the file was transferred, false if it was not (same disk and path / no op)
      */
     public async transfer(
         upload: Upload,
-        newMeta: UploadMeta | null = null,
         newDiskName?: string,
+        newMeta: UploadMeta | null = null,
         regeneratePath: boolean = false,
     ): Promise<Upload | false> {
         // Get the details of where the old file is stored.
@@ -310,6 +310,30 @@ export class Uploads<Upload> {
 
         // Delete the file on the disk
         await disk.delete(file.path);
+    }
+
+    /**
+     * Read an upload's data into memory.
+     *
+     * @param upload
+     */
+    public async read(upload: Upload): Promise<Buffer> {
+        // Ask the repository for info on where and how the upload file is stored.
+        const file = await this.repository.getUploadedFileInfo(upload);
+        // Read the data into memory in a Buffer and resolve with it.
+        return this.disks.getDisk(file.disk).read(file.path);
+    }
+
+    /**
+     * Create a direct read stream from the upload's disk.
+     *
+     * @param upload
+     */
+    public async createReadStream(upload: Upload): Promise<Readable> {
+        // Ask the repository for info on where and how the upload file is stored.
+        const file = await this.repository.getUploadedFileInfo(upload);
+        // Read the data into memory in a Buffer and resolve with it.
+        return this.disks.getDisk(file.disk).createReadStream(file.path);
     }
 
     /**
