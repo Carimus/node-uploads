@@ -61,7 +61,7 @@ import {
 import { DiskDriver } from '@carimus/node-disks';
 import { MyDBUploadModel } from './database';
 
-// We create the uploads service, specifying our database model as the type of "identifier" to pass around
+// We create the uploads service, specifying our database model as our `Upload` generic type.
 export const uploads = new Uploads<MyDBUploadModel>({
     // We specify a single disk `foo` using the Local driver and alias it as the default
     disks: {
@@ -176,17 +176,20 @@ interface which it can use to persist data about where an upload is stored and t
 See the documentation in the [source](./src/types.ts#L40) for more details but in general, the methods that an `UploadRepository` must
 implement are:
 
--   `create(uploadedFile: UploadedFile, meta?: UploadMeta): Promise<UploadIdentifier> | UploadIdentifier`
--   `update(upload: UploadIdentifier, newUploadedFile: UploadedFile, newMeta?: UploadMeta): Promise<UploadIdentifier> | UploadIdentifier`
--   `delete(upload: UploadIdentifier): Promise<void> | void`
--   `getUploadedFileInfo(upload: UploadIdentifier): Promise<UploadedFile> | UploadedFile`
--   `getMeta(upload: UploadIdentifier): Promise<UploadMeta> | UploadMeta`
+-   `create(uploadedFile: UploadedFile, meta?: UploadMeta): Promise<Upload> | Upload`
+-   `update(upload: Upload, newUploadedFile: UploadedFile, newMeta?: UploadMeta): Promise<Upload> | Upload`
+-   `delete(upload: Upload): Promise<void> | void`
+-   `getUploadedFileInfo(upload: Upload): Promise<UploadedFile> | UploadedFile`
+-   `getMeta(upload: Upload): Promise<UploadMeta> | UploadMeta`
 
 Noting that:
 
 -   The methods can be sync or async
--   `UploadIdentifier` is a generic type and can be anything used to uniquely identify the upload in your repository (whether
-    it's an ID, an object record containing the ID, etc.).
+-   `Upload` is a generic type and can be anything used to uniquely identify the upload in your repository. If you're using a database
+    it's typically easiest to use the full record as the `Upload` because all of the operations that return an `Upload` will return the
+    full record as opposed to using an ID for the `Upload` which will require another database query to get the full info to i.e.
+    return the data to the client in a server request/response. That's simply a recommendation though; the developer can use whatever
+    they like as an `Upload`.
 -   [`UploadedFile`](./src/types.ts#L6) is an object with the shape: `{ disk: string, path: string, uploadedAs: string }`
 -   [`UploadMeta`](./src/types.ts#L25) is an object with any or no keys designed to store and pass thru whatever information is
     helpful to pass around and through the uploads service. A string `context` key is recommended for identifying the context

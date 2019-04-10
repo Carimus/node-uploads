@@ -14,12 +14,12 @@ import { defaultSanitizeFilename, defaultGeneratePath } from './defaults';
 /**
  * A service for handling uploaded files.
  */
-export class Uploads<UploadIdentifier> {
-    private config: UploadsConfig<UploadIdentifier>;
-    private repository: UploadRepository<UploadIdentifier>;
+export class Uploads<Upload> {
+    private config: UploadsConfig<Upload>;
+    private repository: UploadRepository<Upload>;
     private disks: DiskManager;
 
-    public constructor(config: UploadsConfig<UploadIdentifier>) {
+    public constructor(config: UploadsConfig<Upload>) {
         this.config = config;
         this.repository = config.repository;
         if (typeof config.disks === 'object') {
@@ -171,7 +171,7 @@ export class Uploads<UploadIdentifier> {
         uploadedAs: string,
         meta: UploadMeta | null = null,
         diskName?: string,
-    ): Promise<UploadIdentifier> {
+    ): Promise<Upload> {
         const uploadedFile = await this.place(fileData, uploadedAs, diskName);
         return meta
             ? this.repository.create(uploadedFile, meta)
@@ -189,12 +189,12 @@ export class Uploads<UploadIdentifier> {
      * @param diskName
      */
     public async update(
-        upload: UploadIdentifier,
+        upload: Upload,
         fileData: Buffer | Readable,
         uploadedAs: string,
         meta: UploadMeta | null = null,
         diskName?: string,
-    ): Promise<UploadIdentifier> {
+    ): Promise<Upload> {
         // Get the info about the old file and resolve its disk.
         const oldFile = await this.repository.getUploadedFileInfo(upload);
         const oldDisk = this.disks.getDisk(oldFile.disk);
@@ -225,11 +225,11 @@ export class Uploads<UploadIdentifier> {
      * @param regeneratePath
      */
     public async duplicate(
-        original: UploadIdentifier,
+        original: Upload,
         meta: UploadMeta | null = null,
         newDiskName?: string,
         regeneratePath: boolean = true,
-    ): Promise<UploadIdentifier> {
+    ): Promise<Upload> {
         // Ask the repository for info on where and how the original upload file is stored.
         const originalFile = await this.repository.getUploadedFileInfo(
             original,
@@ -262,11 +262,11 @@ export class Uploads<UploadIdentifier> {
      * @return The upload if the file was transferred, false if it was not (same disk and path / no op)
      */
     public async transfer(
-        upload: UploadIdentifier,
+        upload: Upload,
         newMeta: UploadMeta | null = null,
         newDiskName?: string,
         regeneratePath: boolean = false,
-    ): Promise<UploadIdentifier | false> {
+    ): Promise<Upload | false> {
         // Get the details of where the old file is stored.
         const oldFile = await this.repository.getUploadedFileInfo(upload);
 
@@ -294,7 +294,7 @@ export class Uploads<UploadIdentifier> {
      * @param onlyFile If true, only thd disk file is deleted and not the upload in the repository.
      */
     public async delete(
-        upload: UploadIdentifier,
+        upload: Upload,
         onlyFile: boolean = false,
     ): Promise<void> {
         // Ask the repository for info on where and how the upload file is stored.
@@ -328,7 +328,7 @@ export class Uploads<UploadIdentifier> {
      * @param execute
      */
     public async withTempFile(
-        upload: UploadIdentifier,
+        upload: Upload,
         execute: ((path: string) => Promise<void> | void) | null = null,
     ): Promise<string> {
         // Ask the repository for info on where and how the upload file is stored.

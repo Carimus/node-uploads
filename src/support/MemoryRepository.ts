@@ -1,25 +1,20 @@
 import { UploadedFile, UploadMeta, UploadRepository } from '../types';
 
-export type MemoryRepositoryUploadIdentifier = number;
-
 export interface MemoryRepositoryRecord {
-    id: MemoryRepositoryUploadIdentifier;
+    id: number;
     file: UploadedFile;
     meta: UploadMeta;
 }
 
 export class MemoryRepository
-    implements UploadRepository<MemoryRepositoryUploadIdentifier> {
-    private database: Map<
-        MemoryRepositoryUploadIdentifier,
-        MemoryRepositoryRecord
-    > = new Map();
-    private counter: MemoryRepositoryUploadIdentifier = 0;
+    implements UploadRepository<MemoryRepositoryRecord> {
+    private database: Map<number, MemoryRepositoryRecord> = new Map();
+    private counter: number = 0;
 
     /**
      * Get the next available ID. Mimics auto-increment starting at 1.
      */
-    private getNextID(): MemoryRepositoryUploadIdentifier {
+    private getNextID(): number {
         return ++this.counter;
     }
 
@@ -31,26 +26,27 @@ export class MemoryRepository
     public async create(
         file: UploadedFile,
         meta?: UploadMeta,
-    ): Promise<MemoryRepositoryUploadIdentifier> {
+    ): Promise<MemoryRepositoryRecord> {
         const id = this.getNextID();
         const upload = { id, file, meta: meta || {} };
         this.database.set(id, upload);
-        return upload.id;
+        return upload;
     }
 
     /**
      * Resolve a record or ID to a fresh record straight from the database.
-     * @param id
+     * @param idOrRecord
      */
     private resolve(
-        id: MemoryRepositoryUploadIdentifier,
+        idOrRecord: number | MemoryRepositoryRecord,
     ): MemoryRepositoryRecord {
-        if (!id) {
-            throw new Error(`Bad identifier: ${id}`);
+        if (!idOrRecord) {
+            throw new Error(`Bad identifier: ${idOrRecord}`);
         }
+        let id = typeof idOrRecord === 'object' ? idOrRecord.id : idOrRecord;
         const existingUpload = this.database.get(id);
         if (!existingUpload) {
-            throw new Error(`No record found with identifier or record: ${id}`);
+            throw new Error(`No record found with identifier: ${id}`);
         }
         return existingUpload;
     }
@@ -62,10 +58,10 @@ export class MemoryRepository
      * @param meta
      */
     public async update(
-        upload: MemoryRepositoryUploadIdentifier,
+        upload: MemoryRepositoryRecord,
         file: UploadedFile,
         meta?: UploadMeta,
-    ): Promise<MemoryRepositoryUploadIdentifier> {
+    ): Promise<MemoryRepositoryRecord> {
         const existingUpload = this.resolve(upload);
         const updatedUpload = {
             ...existingUpload,
@@ -73,16 +69,14 @@ export class MemoryRepository
             meta: meta || existingUpload.meta || {},
         };
         this.database.set(existingUpload.id, updatedUpload);
-        return updatedUpload.id;
+        return updatedUpload;
     }
 
     /**
      * @inheritDoc
      * @param upload
      */
-    public async delete(
-        upload: MemoryRepositoryUploadIdentifier,
-    ): Promise<void> {
+    public async delete(upload: MemoryRepositoryRecord): Promise<void> {
         const { id } = this.resolve(upload);
         this.database.delete(id);
     }
@@ -92,7 +86,7 @@ export class MemoryRepository
      * @param upload
      */
     public async getUploadedFileInfo(
-        upload: MemoryRepositoryUploadIdentifier,
+        upload: MemoryRepositoryRecord,
     ): Promise<UploadedFile> {
         const existingUpload = this.resolve(upload);
         return existingUpload.file;
@@ -102,9 +96,7 @@ export class MemoryRepository
      * @inheritDoc
      * @param upload
      */
-    public async getMeta(
-        upload: MemoryRepositoryUploadIdentifier,
-    ): Promise<UploadMeta> {
+    public async getMeta(upload: MemoryRepositoryRecord): Promise<UploadMeta> {
         const existingUpload = this.resolve(upload);
         return existingUpload.meta;
     }
@@ -114,7 +106,7 @@ export class MemoryRepository
      * @param upload
      */
     public async find(
-        upload: MemoryRepositoryUploadIdentifier,
+        upload: MemoryRepositoryRecord,
     ): Promise<MemoryRepositoryRecord> {
         return this.resolve(upload);
     }
@@ -124,22 +116,13 @@ export class MemoryRepository
      *
      * @param id
      */
-    public log(id?: MemoryRepositoryUploadIdentifier): void {
-        const rawEntries: [
-            MemoryRepositoryUploadIdentifier,
-            MemoryRepositoryRecord | undefined
-        ][] = id ? [[id, this.database.get(id)]] : [...this.database.entries()];
-        const entries: [
-            MemoryRepositoryUploadIdentifier,
-            MemoryRepositoryRecord
-        ][] = rawEntries.filter(
-            (
-                entry: [
-                    MemoryRepositoryUploadIdentifier,
-                    MemoryRepositoryRecord | undefined
-                ],
-            ) => !!entry[1],
-        ) as [MemoryRepositoryUploadIdentifier, MemoryRepositoryRecord][];
+    public log(id?: number): void {
+        const rawEntries: [number, MemoryRepositoryRecord | undefined][] = id
+            ? [[id, this.database.get(id)]]
+            : [...this.database.entries()];
+        const entries: [number, MemoryRepositoryRecord][] = rawEntries.filter(
+            (entry: [number, MemoryRepositoryRecord | undefined]) => !!entry[1],
+        ) as [number, MemoryRepositoryRecord][];
         console.table(
             entries.map(([id, record]) => {
                 return { id, ...record.file, meta: record.meta };

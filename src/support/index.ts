@@ -1,4 +1,1 @@
-export {
-    MemoryRepository,
-    MemoryRepositoryUploadIdentifier,
-} from './MemoryRepository';
+export { MemoryRepository, MemoryRepositoryRecord } from './MemoryRepository';

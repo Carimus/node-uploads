@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
 import { DiskDriver, DiskManager } from '@carimus/node-disks';
-import { MemoryRepository, MemoryRepositoryUploadIdentifier } from '../support';
+import { MemoryRepository, MemoryRepositoryRecord } from '../support';
 import { Uploads } from './Uploads';
 import { UploadMeta } from '../types';
 
@@ -21,14 +21,14 @@ const disks = {
 function setup(): {
     diskManager: DiskManager;
     repository: MemoryRepository;
-    uploads: Uploads<MemoryRepositoryUploadIdentifier>;
+    uploads: Uploads<MemoryRepositoryRecord>;
 } {
     const diskManager = new DiskManager(disks);
     const repository = new MemoryRepository();
     return {
         diskManager,
         repository,
-        uploads: new Uploads<MemoryRepositoryUploadIdentifier>({
+        uploads: new Uploads<MemoryRepositoryRecord>({
             defaultDisk: 'default',
             disks: diskManager,
             repository,
@@ -187,7 +187,7 @@ test('Uploads service can update, updating existing repository records and delet
     const updatedNewMetaFileInfo = await repository.getUploadedFileInfo(
         updatedNewMeta,
     );
-    expect(original).toBe(updatedNewMeta);
+    expect(original.id).toBe(updatedNewMeta.id);
     await expect(
         diskManager.getDisk(originalFileInfo.disk).read(originalFileInfo.path),
     ).rejects.toBeTruthy();

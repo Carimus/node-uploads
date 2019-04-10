@@ -37,7 +37,7 @@ export interface UploadMeta {
 /**
  * An implementation that can read, create, update, and delete Uploads, typically to persist them to a database.
  */
-export interface UploadRepository<UploadIdentifier> {
+export interface UploadRepository<Upload> {
     /**
      * Create an Upload from file upload info and meta info.
      *
@@ -46,7 +46,7 @@ export interface UploadRepository<UploadIdentifier> {
      * @param uploadedFile
      * @param meta
      */
-    create: (uploadedFile: UploadedFile, meta?: UploadMeta) => Promise<UploadIdentifier> | UploadIdentifier,
+    create: (uploadedFile: UploadedFile, meta?: UploadMeta) => Promise<Upload> | Upload,
 
     /**
      * Update an existing Upload from file upload info and meta info.
@@ -57,7 +57,7 @@ export interface UploadRepository<UploadIdentifier> {
      * @param newUploadedFile
      * @param newMeta
      */
-    update: (upload: UploadIdentifier, newUploadedFile: UploadedFile, newMeta?: UploadMeta) => Promise<UploadIdentifier> | UploadIdentifier,
+    update: (upload: Upload, newUploadedFile: UploadedFile, newMeta?: UploadMeta) => Promise<Upload> | Upload,
 
     /**
      * Delete an upload.
@@ -66,7 +66,7 @@ export interface UploadRepository<UploadIdentifier> {
      *
      * @param upload
      */
-    delete: (upload: UploadIdentifier) => Promise<void> | void,
+    delete: (upload: Upload) => Promise<void> | void,
 
     /**
      * Get the uploaded file info that an upload is associated with so that it can be tracked down.
@@ -75,20 +75,20 @@ export interface UploadRepository<UploadIdentifier> {
      *
      * @param upload
      */
-    getUploadedFileInfo: (upload: UploadIdentifier) => Promise<UploadedFile> | UploadedFile,
+    getUploadedFileInfo: (upload: Upload) => Promise<UploadedFile> | UploadedFile,
 
     /**
      * Get the meta info for an upload that was stored in the repository.
      *
      * @param upload
      */
-    getMeta: (upload: UploadIdentifier) => Promise<UploadMeta> | UploadMeta,
+    getMeta: (upload: Upload) => Promise<UploadMeta> | UploadMeta,
 }
 
 /**
  * The configuration for the uploads service.
  */
-export interface UploadsConfig<UploadIdentifier> {
+export interface UploadsConfig<Upload> {
     /**
      * A `node-disks` `DiskManager` instance to use OR a config object that can
      * be used to initialize one.
@@ -100,7 +100,7 @@ export interface UploadsConfig<UploadIdentifier> {
      *
      * @see UploadRepository
      */
-    repository: UploadRepository<UploadIdentifier>,
+    repository: UploadRepository<Upload>,
 
     /**
      * The default disk to use for storing new uploads.
