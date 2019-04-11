@@ -93,7 +93,7 @@
         ]
     },
     "dependencies": {
-        "@carimus/node-disks": "^1.8.0",
+        "@carimus/node-disks": "^1.9.1",
         "tmp": "^0.1.0"
     }
 }

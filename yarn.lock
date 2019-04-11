@@ -138,15 +138,16 @@
     lodash "^4.17.11"
     to-fast-properties "^2.0.0"
 
-"@carimus/node-disks@^1.8.0":
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.8.0.tgz#d5d12300dfaf244889570f5309e354b8df18ef3b"
-  integrity sha512-zdi7euqzn76Z2hyMBN5hUsr9beSDRB8fCktRz4xuUTXNAqmL15kCKruSV3WHB7tz4nUDn+Hr2yCYM3U+S3jgyw==
+"@carimus/node-disks@^1.9.1":
+  version "1.9.1"
+  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.9.1.tgz#4a0f8bb54a07fcb59cb5dd2c43cb169e542e1c1b"
+  integrity sha512-yvsLRemMfB4wT+R0uMOvXgfZb3O7PGizVGBcSWMdkCM8PfdKgJW/ZvPSmxZwDDXrQK20HTScgUTsVcyTviDRfg==
   dependencies:
     aws-sdk "^2.431.0"
     fs-extra "^7.0.1"
     ramda "0.25.0"
     stream-to-array "^2.3.0"
+    url-join "^4.0.0"
     verror "^1.10.0"
 
 "@cnakazawa/watch@^1.0.3":

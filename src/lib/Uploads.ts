@@ -337,6 +337,41 @@ export class Uploads<Upload> {
     }
 
     /**
+     * Get a URL from the disk for an upload. Will be null if the disk that the upload is stored on does not support
+     * URLs or is not configured for them.
+     *
+     * @param upload
+     */
+    public async getUrl(upload: Upload): Promise<string | null> {
+        // Ask the repository for info on where and how the upload file is stored.
+        const file = await this.repository.getUploadedFileInfo(upload);
+        // Read the data into memory in a Buffer and resolve with it.
+        return this.disks.getDisk(file.disk).getUrl(file.path);
+    }
+
+    /**
+     * Get a temporary URL from the disk for an upload. Will be null if the disk that the upload is stored on does not
+     * support temporary URLs or is not configured for them.
+     *
+     * @param upload
+     * @param expires The number of seconds the URL should expire at. Default is configured at the disk level.
+     * @param fallback Whether or not to fallback to permanent URLs if the disk doesn't support temporary URLs. Defualt
+     *      is generally false but is configured at the disk level.
+     */
+    public async getTemporaryUrl(
+        upload: Upload,
+        expires?: number,
+        fallback?: boolean,
+    ): Promise<string | null> {
+        // Ask the repository for info on where and how the upload file is stored.
+        const file = await this.repository.getUploadedFileInfo(upload);
+        // Read the data into memory in a Buffer and resolve with it.
+        return this.disks
+            .getDisk(file.disk)
+            .getTemporaryUrl(file.path, expires, fallback);
+    }
+
+    /**
      * Download the file to the local disk as a temporary file for operations that require local data manipuation
      * and which can't handle Buffers, i.e. operations expected to be performed on large files where it's easier to
      * deal with the data in chunks off of the disk or something instead of keeping them in a Buffer in memory in their

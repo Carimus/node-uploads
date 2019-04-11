@@ -1,6 +1,11 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { DiskDriver, DiskManager, streamToBuffer } from '@carimus/node-disks';
+import {
+    DiskDriver,
+    DiskManager,
+    DiskManagerConfig,
+    streamToBuffer,
+} from '@carimus/node-disks';
 import { MemoryRepository, MemoryRepositoryRecord } from '../support';
 import { Uploads } from './Uploads';
 import { UploadMeta } from '../types';
@@ -8,7 +13,7 @@ import { UploadMeta } from '../types';
 const readFileFromLocalFilesystem = promisify(fs.readFile);
 const deleteFromLocalFilesystem = promisify(fs.unlink);
 
-const disks = {
+const disks: DiskManagerConfig = {
     default: 'memory',
     memory: {
         driver: DiskDriver.Memory,
@@ -16,9 +21,18 @@ const disks = {
     nonDefaultMemory: {
         driver: DiskDriver.Memory,
     },
+    memoryWithUrls: {
+        driver: DiskDriver.Memory,
+        config: {
+            url: 'http://localhost',
+            temporaryUrlFallback: true,
+        },
+    },
 };
 
-function setup(): {
+function setup(
+    defaultDisk = 'default',
+): {
     diskManager: DiskManager;
     repository: MemoryRepository;
     uploads: Uploads<MemoryRepositoryRecord>;
@@ -29,7 +43,7 @@ function setup(): {
         diskManager,
         repository,
         uploads: new Uploads<MemoryRepositoryRecord>({
-            defaultDisk: 'default',
+            defaultDisk,
             disks: diskManager,
             repository,
         }),
@@ -449,4 +463,32 @@ test('Uploads can read and createReadStream for uploads', async () => {
     expect(uploadedFileData.toString('base64')).toBe(
         uploadsReadStreamFileData.toString('base64'),
     );
+});
+
+test('Uploads can generate urls and temp urls for uploads on disks that supports URLs', async () => {
+    const { uploads } = setup('memoryWithUrls');
+
+    // Upload a file
+    const upload = await uploads.upload(
+        files.longName.data,
+        files.longName.uploadedAs,
+        files.longName.meta,
+    );
+
+    // Check the URLs generated
+    const url = await uploads.getUrl(upload);
+    const tempUrl = await uploads.getTemporaryUrl(upload);
+    expect(url).toBeTruthy();
+    expect(typeof url).toBe('string');
+    expect((url as string).indexOf('http://localhost')).toBe(0);
+    expect(tempUrl).toBeTruthy();
+    expect(typeof tempUrl).toBe('string');
+    expect((tempUrl as string).indexOf('http://localhost')).toBe(0);
+
+    // Transfer the upload to a disk that doesn't support URLs
+    await uploads.transfer(upload, 'default');
+
+    // Check to ensure the url and tempUrl are null for this upload now.
+    expect(await uploads.getUrl(upload)).toBeNull();
+    expect(await uploads.getTemporaryUrl(upload)).toBeNull();
 });
