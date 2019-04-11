@@ -271,7 +271,6 @@ which the upload was uploaded or is used (i.e. `'*'` or `'user_profile'`).
 ## TODO
 
 -   [ ] Document errors
--   [ ] Do permanent and temporary (e.g. pre-signed URLs for S3 buckets) URL generation.
 -   [ ] Move bulk of `useTempFile` logic to `@carimus/node-disks`
 
 ## Development
