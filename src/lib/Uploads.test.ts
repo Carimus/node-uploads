@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { DiskDriver, DiskManager } from '@carimus/node-disks';
+import { DiskDriver, DiskManager, streamToBuffer } from '@carimus/node-disks';
 import { MemoryRepository, MemoryRepositoryRecord } from '../support';
 import { Uploads } from './Uploads';
 import { UploadMeta } from '../types';
@@ -418,4 +418,35 @@ test('Uploads service can transfer and regenerate path.', async () => {
         diskManager.getDisk('nonDefaultMemory').getName(),
     );
     expect(newFileInfo.path).not.toBe(fileInfo.path);
+});
+
+test('Uploads can read and createReadStream for uploads', async () => {
+    const { diskManager, repository, uploads } = setup();
+
+    // Upload a file
+    const upload = await uploads.upload(
+        files.longName.data,
+        files.longName.uploadedAs,
+        files.longName.meta,
+    );
+
+    // Read the data directly off the disk.
+    const fileInfo = await repository.getUploadedFileInfo(upload);
+    const uploadedFileData = await diskManager
+        .getDisk(fileInfo.disk)
+        .read(fileInfo.path);
+
+    // Use the uploads service to read the data into memory and then compare with the disk file data.
+    const uploadsReadFileData = await uploads.read(upload);
+    expect(uploadedFileData.toString('base64')).toBe(
+        uploadsReadFileData.toString('base64'),
+    );
+
+    // Use the uploads service to read the readable stream into memory and then compare with the disk file data.
+    const uploadsReadStreamFileData = await streamToBuffer(
+        await uploads.createReadStream(upload),
+    );
+    expect(uploadedFileData.toString('base64')).toBe(
+        uploadsReadStreamFileData.toString('base64'),
+    );
 });
