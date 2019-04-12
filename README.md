@@ -271,7 +271,6 @@ which the upload was uploaded or is used (i.e. `'*'` or `'user_profile'`).
 ## TODO
 
 -   [ ] Document errors
--   [ ] Move bulk of `useTempFile` logic to `@carimus/node-disks`
 
 ## Development
 

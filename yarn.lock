@@ -138,15 +138,16 @@
     lodash "^4.17.11"
     to-fast-properties "^2.0.0"
 
-"@carimus/node-disks@^1.9.1":
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.9.1.tgz#4a0f8bb54a07fcb59cb5dd2c43cb169e542e1c1b"
-  integrity sha512-yvsLRemMfB4wT+R0uMOvXgfZb3O7PGizVGBcSWMdkCM8PfdKgJW/ZvPSmxZwDDXrQK20HTScgUTsVcyTviDRfg==
+"@carimus/node-disks@^1.10.0":
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/@carimus/node-disks/-/node-disks-1.10.0.tgz#4172b36efd4dd9ef270950ba9dd95a11234ae9e1"
+  integrity sha512-rW0Wv7qcDghdfyFFFDijOBlnFfAYbVMaETkRfZ3hbV+Otu0Ur84Z39p50wPqOWt7Hy7ckJm3zWyOk6Ro7HLuAg==
   dependencies:
     aws-sdk "^2.431.0"
     fs-extra "^7.0.1"
     ramda "0.25.0"
     stream-to-array "^2.3.0"
+    tmp "^0.1.0"
     url-join "^4.0.0"
     verror "^1.10.0"
 
@@ -644,11 +645,6 @@
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
-
-"@types/tmp@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@types/tmp/-/tmp-0.1.0.tgz#19cf73a7bcf641965485119726397a096f0049bd"
-  integrity sha512-6IwZ9HzWbCq6XoQWhxLpDjuADodH/MKXRUIDFudvgjcVdjFknvmR+DNsoUeer4XPrEnrZs04Jj+kfV9pFsrhmA==
 
 "@types/yargs@^12.0.2", "@types/yargs@^12.0.9":
   version "12.0.10"
