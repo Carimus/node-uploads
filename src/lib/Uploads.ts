@@ -61,9 +61,9 @@ export class Uploads<Upload> {
      */
     public generateStoragePath(sanitizedUploadedAs: string): string {
         const path = this.generatePath(sanitizedUploadedAs);
-        return `/${trimPath(`${this.config.pathPrefix || ''}/`)}${trimPath(
-            path,
-        )}`;
+        const trimmedPrefix = trimPath(`${this.config.pathPrefix || ''}`);
+        const prefix = trimmedPrefix ? `${trimmedPrefix}/` : '';
+        return `/${prefix}${trimPath(path)}`;
     }
 
     /**

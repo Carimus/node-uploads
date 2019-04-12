@@ -31,7 +31,7 @@ const disks: DiskManagerConfig = {
 };
 
 function setup(
-    defaultDisk = 'default',
+    extra = {},
 ): {
     diskManager: DiskManager;
     repository: MemoryRepository;
@@ -43,9 +43,10 @@ function setup(
         diskManager,
         repository,
         uploads: new Uploads<MemoryRepositoryRecord>({
-            defaultDisk,
+            defaultDisk: 'default',
             disks: diskManager,
             repository,
+            ...extra,
         }),
     };
 }
@@ -466,7 +467,7 @@ test('Uploads can read and createReadStream for uploads', async () => {
 });
 
 test('Uploads can generate urls and temp urls for uploads on disks that supports URLs', async () => {
-    const { uploads } = setup('memoryWithUrls');
+    const { uploads } = setup({ defaultDisk: 'memoryWithUrls' });
 
     // Upload a file
     const upload = await uploads.upload(
@@ -491,4 +492,55 @@ test('Uploads can generate urls and temp urls for uploads on disks that supports
     // Check to ensure the url and tempUrl are null for this upload now.
     expect(await uploads.getUrl(upload)).toBeNull();
     expect(await uploads.getTemporaryUrl(upload)).toBeNull();
+});
+
+test('Uploads service can prefix generated storage paths with pathPrefix config option', async () => {
+    const { uploads, repository } = setup({ pathPrefix: 'uploads' });
+
+    // Upload a file and grab its info from the repository
+    const upload = await uploads.upload(
+        files.normal.data,
+        files.normal.uploadedAs,
+        files.normal.meta,
+    );
+    const fileInfo = await repository.getUploadedFileInfo(upload);
+
+    // Consider a pass to be any string starting with `/uploads/` and then followed by any non-forward-slash character
+    expect(fileInfo.path).toEqual(expect.stringMatching(/^\/uploads\/[^/]/));
+});
+
+test("Uploads service pathPrefix config option doesn't care about leading or trailing slashes", async () => {
+    const { uploads: uploadsLeading, repository: repositoryLeading } = setup({
+        pathPrefix: '/uploads',
+    });
+    const { uploads: uploadsTrailing, repository: repositoryTrailing } = setup({
+        pathPrefix: 'uploads/',
+    });
+    const { uploads: uploadsBoth, repository: repositoryBoth } = setup({
+        pathPrefix: '/uploads/',
+    });
+
+    // Upload files and grab their info from their respective repositories.
+    const { data, uploadedAs, meta } = files.normal;
+    const uploadLeading = await uploadsLeading.upload(data, uploadedAs, meta);
+    const uploadTrailing = await uploadsTrailing.upload(data, uploadedAs, meta);
+    const uploadBoth = await uploadsBoth.upload(data, uploadedAs, meta);
+    const fileInfoLeading = await repositoryLeading.getUploadedFileInfo(
+        uploadLeading,
+    );
+    const fileInfoTrailing = await repositoryTrailing.getUploadedFileInfo(
+        uploadTrailing,
+    );
+    const fileInfoBoth = await repositoryBoth.getUploadedFileInfo(uploadBoth);
+
+    // Consider a pass to be any string starting with `/uploads/` and then followed by any non-forward-slash character
+    expect(fileInfoLeading.path).toEqual(
+        expect.stringMatching(/^\/uploads\/[^/]/),
+    );
+    expect(fileInfoTrailing.path).toEqual(
+        expect.stringMatching(/^\/uploads\/[^/]/),
+    );
+    expect(fileInfoBoth.path).toEqual(
+        expect.stringMatching(/^\/uploads\/[^/]/),
+    );
 });
