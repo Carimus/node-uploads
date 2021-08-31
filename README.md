@@ -277,3 +277,4 @@ which the upload was uploaded or is used (i.e. `'*'` or `'user_profile'`).
 This project is based on the `carimus-node-ts-package-template`. Check out the
 [README and docs there](https://bitbucket.org/Carimus/carimus-node-ts-package-template/src/master/README.md)
 for more up to date information on the development process and tools available.
+
